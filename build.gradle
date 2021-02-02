@@ -1,0 +1,34 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.intellij' version '0.6.5'
+}
+
+group 'com.seliote'
+version '1.0-BETA'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+}
+
+intellij {
+    version '2020.3.2'
+    // Set type to Ultimate edition, default Community edition not support Spring plugin
+    type 'IU'
+    // Add used plugins
+    plugins = ['com.intellij.java', 'com.intellij.spring']
+}
+patchPluginXml {
+    changeNotes """
+      Create MyBatis4II plugin."""
+}
+test {
+    useJUnitPlatform()
+}
+
+publishPlugin {
+    channels = 'Stable'
+    token = 'my_jb_token'
+}
