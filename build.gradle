@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.seliote'
-version '1.0-BETA'
+version '1.1-BETA'
 
 repositories {
     mavenCentral()
@@ -21,8 +21,10 @@ intellij {
     plugins = ['com.intellij.java', 'com.intellij.spring']
 }
 patchPluginXml {
-    changeNotes """
-      Create MyBatis4II plugin."""
+    changeNotes """<![CDATA[
+    <li>1.1-BETA: Fix bug: can not inject bean if is not a array.</li>
+    <li>1.0-BETA: Create MyBatis4II plugin.</li>
+    ]]>"""
 }
 test {
     useJUnitPlatform()
@@ -30,5 +32,5 @@ test {
 
 publishPlugin {
     channels = 'Stable'
-    token = 'my_jb_token'
+    token = 'perm:c2VsaW90ZQ==.OTItMzI1Ng==.hb5xZkd7tAgO5ox0I7muKvUeOSM21u'
 }

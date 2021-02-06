@@ -47,9 +47,9 @@ public class MapperBeanProvider extends SpringMyBatisBeansProvider {
             if (config.isEmpty()) {
                 return mapperBeans;
             }
-            var psiPackage = getMapperScanPackages(config.get());
+            var psiPackages = getMapperScanPackages(config.get());
             Collection<PsiClass> mappers = scanPackagesInterface(
-                    GlobalSearchScope.projectScope(module.getProject()), psiPackage);
+                    GlobalSearchScope.projectScope(module.getProject()), psiPackages);
             mappers.forEach(mapper -> mapperBeans.add(new CustomSpringComponent(mapper)));
         }
         return mapperBeans;
@@ -98,17 +98,82 @@ public class MapperBeanProvider extends SpringMyBatisBeansProvider {
             var attrName = psiNameValuePair.getAttributeName();
             var psiAnnotationMemberValue = psiNameValuePair.getValue();
             if (psiAnnotationMemberValue instanceof PsiArrayInitializerMemberValue) {
-                var psiArrayInitializerMemberValue =
-                        (PsiArrayInitializerMemberValue) psiAnnotationMemberValue;
-                if (MAPPER_SCAN_VALUE.equals(attrName)
-                        || MAPPER_SCAN_BASE_PACKAGES.equals(attrName)) {
-                    psiPackages.addAll(mapperScanValueHandle(context,
-                            psiArrayInitializerMemberValue));
-                } else if (MAPPER_SCAN_BASE_PACKAGE_CLASSES.equals(attrName)) {
-                    psiPackages.addAll(mapperScanClassHandle(context,
-                            psiArrayInitializerMemberValue));
-                }
+                psiPackages.addAll(handlePsiArrayInitializerMemberValue(
+                        attrName, context, (PsiArrayInitializerMemberValue) psiAnnotationMemberValue));
+            } else if (psiAnnotationMemberValue instanceof PsiLiteralExpression) {
+                psiPackages.addAll(handlePsiLiteralExpression(
+                        context, (PsiLiteralExpression) psiAnnotationMemberValue));
+            } else if (psiAnnotationMemberValue instanceof PsiClassObjectAccessExpression) {
+                psiPackages.addAll(handlePsiClassObjectAccessExpression(
+                        context, (PsiClassObjectAccessExpression) psiAnnotationMemberValue));
             }
+        }
+        return psiPackages;
+    }
+
+    /**
+     * Handle PsiArrayInitializerMemberValue object
+     * like @MapperScan(basePackages = {"com.pkg"})
+     * or @MapperScan(basePackageClasses = MapperMarker.class)
+     *
+     * @param attrName                       MapperScan attribute name
+     * @param context                        Context object
+     * @param psiArrayInitializerMemberValue MapperScan attribute value
+     * @return MapperScan value/basePackages representative PsiPackage
+     */
+    private Collection<PsiPackage> handlePsiArrayInitializerMemberValue(
+            String attrName,
+            PsiClass context,
+            PsiArrayInitializerMemberValue psiArrayInitializerMemberValue) {
+        Collection<PsiPackage> psiPackages = new ArrayList<>();
+        if (MAPPER_SCAN_VALUE.equals(attrName)
+                || MAPPER_SCAN_BASE_PACKAGES.equals(attrName)) {
+            psiPackages.addAll(handleMapperScanValue(context,
+                    psiArrayInitializerMemberValue));
+        } else if (MAPPER_SCAN_BASE_PACKAGE_CLASSES.equals(attrName)) {
+            psiPackages.addAll(handleMapperScanClass(context,
+                    psiArrayInitializerMemberValue));
+        }
+        return psiPackages;
+    }
+
+    /**
+     * Handle PsiLiteralExpression object, like @MapperScan(basePackages = "com.pkg")
+     *
+     * @param context              Context object
+     * @param psiLiteralExpression MapperScan attribute value
+     * @return MapperScan value representative PsiPackage
+     */
+    private Collection<PsiPackage> handlePsiLiteralExpression(
+            PsiClass context,
+            PsiLiteralExpression psiLiteralExpression) {
+        Collection<PsiPackage> psiPackages = new ArrayList<>();
+        var psiPackage = getPackageByName(
+                JavaPsiFacade.getInstance(context.getProject()),
+                // Value is a String but with quotation mark at begin and end
+                psiLiteralExpression.getText().replaceAll("\"", ""));
+        psiPackage.ifPresent(psiPackages::add);
+        return psiPackages;
+    }
+
+    /**
+     * Handle PsiLiteralExpression object, like @MapperScan(basePackageClasses = MapperMarker.class)
+     *
+     * @param context                        Context object
+     * @param psiClassObjectAccessExpression MapperScan attribute value
+     * @return MapperScan basePackages representative PsiPackage
+     */
+    private Collection<PsiPackage> handlePsiClassObjectAccessExpression(
+            PsiClass context,
+            PsiClassObjectAccessExpression psiClassObjectAccessExpression) {
+        Collection<PsiPackage> psiPackages = new ArrayList<>();
+        var psiClass = PsiTypesUtil.getPsiClass(psiClassObjectAccessExpression.getOperand().getType());
+        if (psiClass != null) {
+            String packageName = ((PsiJavaFile) psiClass.getContainingFile())
+                    .getPackageName();
+            var psiPackage = getPackageByName(
+                    JavaPsiFacade.getInstance(context.getProject()), packageName);
+            psiPackage.ifPresent(psiPackages::add);
         }
         return psiPackages;
     }
@@ -120,7 +185,7 @@ public class MapperBeanProvider extends SpringMyBatisBeansProvider {
      * @param psiArrayInitializerMemberValue PsiArrayInitializerMemberValue data object
      * @return MapperScan value/basePackages representative PsiPackage
      */
-    private Collection<PsiPackage> mapperScanValueHandle(
+    private Collection<PsiPackage> handleMapperScanValue(
             PsiClass context,
             PsiArrayInitializerMemberValue psiArrayInitializerMemberValue) {
         Collection<PsiPackage> psiPackages = new ArrayList<>();
@@ -142,7 +207,7 @@ public class MapperBeanProvider extends SpringMyBatisBeansProvider {
      * @param psiArrayInitializerMemberValue PsiArrayInitializerMemberValue data object
      * @return MapperScan basePackageClasses representative PsiPackage
      */
-    private Collection<PsiPackage> mapperScanClassHandle(
+    private Collection<PsiPackage> handleMapperScanClass(
             PsiClass context,
             PsiArrayInitializerMemberValue psiArrayInitializerMemberValue) {
         Collection<PsiPackage> psiPackages = new ArrayList<>();

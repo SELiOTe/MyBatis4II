@@ -4,9 +4,10 @@
     <vendor email="seliote@hotmail.com" url="https://github.com/SELiOTe/MyBatis4II">seliote</vendor>
 
     <description><![CDATA[
-    MyBatis plugin, Support:<br/>
-    - Create mapper xml with template<br/>
-    - Inject mapper bean to Spring framework
+    MyBatis plugin:<br/>
+    - Create mapper xml with template(MyBatis in library path)<br/>
+    - Inject mapper bean to Spring framework(Only support @MapperScan)<br/>
+    More: <a href=https://github.com/SELiOTe/MyBatis4II">GitHub</a>
     ]]></description>
 
     <!-- Dependencies -->
