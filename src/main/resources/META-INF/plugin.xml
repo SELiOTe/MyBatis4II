@@ -7,7 +7,7 @@
     MyBatis plugin:<br/>
     - Create mapper xml with template(MyBatis in library path)<br/>
     - Inject mapper bean to Spring framework(Only support @MapperScan)<br/>
-    More: <a href=https://github.com/SELiOTe/MyBatis4II">GitHub</a>
+    More: <a href="https://github.com/SELiOTe/MyBatis4II">GitHub</a>
     ]]></description>
 
     <!-- Dependencies -->
